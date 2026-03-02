@@ -10,7 +10,7 @@
   <!-- ==================== START SCREEN ==================== -->
   <div id="start-screen" class="screen active">
     <div class="container">
-      <h1 class="logo">🌍 World Trivia</h1>
+      <h1 class="logo"><img src="https://img.icons8.com/color/48/globe-earth.png" alt="globe" class="logo-icon"> World Trivia</h1>
       <p class="subtitle">Test your knowledge about the world!</p>
 
       <div class="setup-card">
@@ -32,6 +32,10 @@
             <span class="cat-icon">💰</span>
             <span class="cat-label">Currencies</span>
           </button>
+          <button class="category-btn mixed-btn" data-category="mixed">
+            <span class="cat-icon">🎲</span>
+            <span class="cat-label">Mixed</span>
+          </button>
         </div>
 
         <h2>Number of Questions</h2>
@@ -40,6 +44,12 @@
           <button class="count-btn" data-count="20">20</button>
           <button class="count-btn" data-count="30">30</button>
           <button class="count-btn" data-count="50">50</button>
+        </div>
+
+        <h2>Timer Mode</h2>
+        <div class="mode-grid">
+          <button class="mode-btn selected" data-mode="timed">⏱️ Timed</button>
+          <button class="mode-btn" data-mode="untimed">♾️ Untimed</button>
         </div>
 
         <button id="start-btn" class="primary-btn" disabled>Start Quiz</button>
@@ -63,6 +73,7 @@
         </div>
         <div class="score-timer">
           <span id="score-display">Score: 0</span>
+          <span id="streak-display" class="streak-display hidden"></span>
           <span id="timer-display">⏱ 15s</span>
         </div>
       </div>
@@ -101,6 +112,10 @@
           <div class="stat">
             <span class="stat-value" id="stat-time">0s</span>
             <span class="stat-label">Avg Time</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-streak">0</span>
+            <span class="stat-label">Best Streak</span>
           </div>
         </div>
 

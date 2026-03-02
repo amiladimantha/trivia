@@ -38,6 +38,15 @@ body{
   background:linear-gradient(135deg,var(--primary),var(--accent));
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.logo-icon{
+  width:48px;
+  height:48px;
+  -webkit-text-fill-color:initial;
 }
 .subtitle{
   text-align:center;
@@ -310,6 +319,63 @@ body{
 /* ===== TIMER WARNING ===== */
 #timer-display.warning{color:var(--wrong);font-weight:700;animation:pulse .5s infinite alternate}
 @keyframes pulse{from{opacity:1}to{opacity:.4}}
+
+/* ===== MIXED BUTTON ===== */
+.mixed-btn{
+  grid-column:1 / -1;
+  background:linear-gradient(135deg,var(--card),#2a2a44);
+}
+
+/* ===== MODE TOGGLE ===== */
+.mode-grid{
+  display:flex;gap:10px;
+}
+.mode-btn{
+  flex:1;
+  padding:12px 0;
+  background:var(--card);
+  border:2px solid transparent;
+  border-radius:var(--radius);
+  color:var(--text);
+  font-size:1.05rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+.mode-btn:hover{border-color:var(--primary)}
+.mode-btn.selected{border-color:var(--primary);background:var(--primary-glow)}
+
+/* ===== STREAK COUNTER ===== */
+.streak-display{
+  font-weight:700;
+  font-size:.95rem;
+  color:#ff9f43;
+  transition:transform .2s ease;
+}
+.streak-display.hidden{display:none}
+.streak-display.pop{
+  animation:streakPop .4s ease;
+}
+@keyframes streakPop{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.5)}
+  100%{transform:scale(1)}
+}
+.streak-display.big-streak{
+  color:#ff6b6b;
+  text-shadow:0 0 10px rgba(255,107,107,.6);
+}
+
+/* ===== EXPLANATION ===== */
+.explanation{
+  margin-top:6px;
+  font-weight:400;
+  font-size:.9rem;
+  opacity:.9;
+}
+
+/* ===== BEST STREAK STAT ===== */
+.stat:nth-child(4) .stat-value{color:#ff9f43}
 
 /* ===== RESPONSIVE ===== */
 @media(max-width:480px){

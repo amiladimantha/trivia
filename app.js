@@ -28,6 +28,8 @@
   const $retryBtn  = document.getElementById("retry-btn");
   const $homeBtn   = document.getElementById("home-btn");
   const $exitBtn   = document.getElementById("exit-btn");
+  const $modeBtns  = document.querySelectorAll(".mode-btn");
+  const $streakDisp= document.getElementById("streak-display");
 
   /* ---------- Quiz state ---------- */
   let selectedCategory = null;
@@ -39,6 +41,9 @@
   let timeLeft         = 15;
   let answers          = [];          // { question, correct, chosen, isCorrect, timeTaken }
   let questionStartTime = 0;
+  let timedMode        = true;
+  let currentStreak    = 0;
+  let bestStreak       = 0;
 
   const LETTERS = ["A", "B", "C", "D"];
   const TIME_PER_QUESTION = 15;       // seconds
@@ -61,6 +66,14 @@
       btn.classList.add("selected");
       selectedCount = parseInt(btn.dataset.count, 10);
       checkReady();
+    });
+  });
+
+  $modeBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      $modeBtns.forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      timedMode = btn.dataset.mode === "timed";
     });
   });
 
@@ -93,23 +106,33 @@
   }
 
   function buildQuestions() {
-    const pool = TRIVIA_DATA[selectedCategory];
-    const shuffled = shuffle(pool);
-    // if user wants more questions than data, repeat with shuffle
-    const expanded = [];
-    while (expanded.length < selectedCount) {
-      expanded.push(...shuffle(pool));
+    if (selectedCategory === "mixed") {
+      const categories = ["flags", "countries", "languages", "currencies"];
+      questions = [];
+      while (questions.length < selectedCount) {
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        const pool = TRIVIA_DATA[cat];
+        const item = pool[Math.floor(Math.random() * pool.length)];
+        questions.push(generateQuestion(item, pool, cat));
+      }
+    } else {
+      const pool = TRIVIA_DATA[selectedCategory];
+      const expanded = [];
+      while (expanded.length < selectedCount) {
+        expanded.push(...shuffle(pool));
+      }
+      const picked = expanded.slice(0, selectedCount);
+      questions = picked.map(item => generateQuestion(item, pool, selectedCategory));
     }
-    const picked = expanded.slice(0, selectedCount);
-
-    questions = picked.map(item => generateQuestion(item, pool));
     currentIndex = 0;
     score = 0;
+    currentStreak = 0;
+    bestStreak = 0;
     answers = [];
   }
 
-  function generateQuestion(item, pool) {
-    switch (selectedCategory) {
+  function generateQuestion(item, pool, cat) {
+    switch (cat) {
       case "flags":
         return buildFlagQuestion(item, pool);
       case "countries":
@@ -141,6 +164,7 @@
         visualType: "flag",
         options: opts,
         answer: item.country,
+        explanation: `This is the flag of ${item.country}.`,
       };
     } else {
       const wrongs = pickRandom(pool.map(p => p.code), 3, item.code);
@@ -151,6 +175,7 @@
         visualType: "flag-options",
         options: opts,
         answer: item.code,
+        explanation: `This is the flag of ${item.country}.`,
       };
     }
   }
@@ -167,6 +192,7 @@
         visual: "",
         options: opts,
         answer: item.country,
+        explanation: `${item.capital} is the capital of ${item.country}, located in ${item.continent}.`,
       };
     } else if (r < 0.66) {
       // country → capital
@@ -177,6 +203,7 @@
         visual: "",
         options: opts,
         answer: item.capital,
+        explanation: `The capital of ${item.country} is ${item.capital}.`,
       };
     } else {
       // country → continent
@@ -188,6 +215,7 @@
         visual: "",
         options: opts,
         answer: item.continent,
+        explanation: `${item.country} is located in ${item.continent}. Its capital is ${item.capital}.`,
       };
     }
   }
@@ -215,6 +243,7 @@
         visual: "",
         options: opts,
         answer: item.language,
+        explanation: `The official language of ${item.country} is ${item.language}.`,
       };
     } else {
       const wrongs = pickRandom(pool.map(p => p.country), 3, item.country);
@@ -224,6 +253,7 @@
         visual: "",
         options: opts,
         answer: item.country,
+        explanation: `${item.language} is the official language of ${item.country}.`,
       };
     }
   }
@@ -242,6 +272,7 @@
         visual: "",
         options: opts,
         answer: item.currency,
+        explanation: `The currency of ${item.country} is ${item.currency}.`,
       };
     } else {
       const wrongs = pickRandom(pool.map(p => p.country), 3, item.country);
@@ -251,6 +282,7 @@
         visual: "",
         options: opts,
         answer: item.country,
+        explanation: `${item.currency} is the currency of ${item.country}.`,
       };
     }
   }
@@ -294,8 +326,25 @@
     $feedback.classList.add("hidden");
     $feedback.className = "feedback hidden";
 
+    // streak
+    if (currentStreak > 0) {
+      $streakDisp.textContent = `🔥 ${currentStreak}`;
+      $streakDisp.classList.remove("hidden");
+      if (currentStreak >= 5) $streakDisp.classList.add("big-streak");
+      else $streakDisp.classList.remove("big-streak");
+    } else {
+      $streakDisp.classList.add("hidden");
+      $streakDisp.classList.remove("big-streak");
+    }
+
     // timer
-    startTimer();
+    if (timedMode) {
+      startTimer();
+    } else {
+      clearInterval(timer);
+      $timerDisp.textContent = "♾️ Untimed";
+      $timerDisp.classList.remove("warning");
+    }
     questionStartTime = Date.now();
   }
 
@@ -322,7 +371,10 @@
   function handleTimeout() {
     const q = questions[currentIndex];
     lockOptions(null, q);
-    showFeedback(false, q.answer);
+    showFeedback(false, q.answer, q.explanation);
+    currentStreak = 0;
+    $streakDisp.classList.add("hidden");
+    $streakDisp.classList.remove("big-streak");
 
     answers.push({
       question: q.text,
@@ -345,10 +397,23 @@
     const timeTaken = ((Date.now() - questionStartTime) / 1000).toFixed(1);
     const isCorrect = chosen === q.answer;
 
-    if (isCorrect) score++;
+    if (isCorrect) {
+      score++;
+      currentStreak++;
+      if (currentStreak > bestStreak) bestStreak = currentStreak;
+      $streakDisp.textContent = `🔥 ${currentStreak}`;
+      $streakDisp.classList.remove("hidden", "pop");
+      void $streakDisp.offsetWidth;
+      $streakDisp.classList.add("pop");
+      if (currentStreak >= 5) $streakDisp.classList.add("big-streak");
+    } else {
+      currentStreak = 0;
+      $streakDisp.classList.add("hidden");
+      $streakDisp.classList.remove("big-streak");
+    }
 
     lockOptions(btn, q);
-    showFeedback(isCorrect, q.answer);
+    showFeedback(isCorrect, q.answer, q.explanation);
 
     answers.push({
       question: q.text,
@@ -375,14 +440,16 @@
     });
   }
 
-  function showFeedback(isCorrect, correctAnswer) {
+  function showFeedback(isCorrect, correctAnswer, explanation) {
     $feedback.classList.remove("hidden", "correct", "wrong");
     if (isCorrect) {
       $feedback.classList.add("correct");
-      $feedback.textContent = "✅ Correct!";
+      let msg = "✅ Correct!";
+      if (currentStreak >= 3) msg += ` 🔥 ${currentStreak} in a row!`;
+      $feedback.innerHTML = msg;
     } else {
       $feedback.classList.add("wrong");
-      $feedback.textContent = `❌ Wrong! Answer: ${correctAnswer}`;
+      $feedback.innerHTML = `❌ Wrong! Answer: ${correctAnswer}${explanation ? `<div class="explanation">💡 ${explanation}</div>` : ""}`;
     }
   }
 
@@ -430,6 +497,7 @@
     document.getElementById("stat-correct").textContent = score;
     document.getElementById("stat-wrong").textContent = wrong;
     document.getElementById("stat-time").textContent = avgTime + "s";
+    document.getElementById("stat-streak").textContent = bestStreak;
 
     // review list
     const $review = document.getElementById("review-list");
@@ -473,6 +541,10 @@
     $countBtns.forEach(b => b.classList.remove("selected"));
     selectedCategory = null;
     selectedCount = null;
+    currentStreak = 0;
+    bestStreak = 0;
+    $streakDisp.classList.add("hidden");
+    $streakDisp.classList.remove("big-streak");
     $startBtn.disabled = true;
     showScreen($start);
   }
