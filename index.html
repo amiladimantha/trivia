@@ -14,7 +14,7 @@
 
   <!-- Android / PWA -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0f0f1a" />
+  <meta name="theme-color" content="#0b0b1e" />
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -25,46 +25,120 @@
       <h1 class="logo"><img src="https://img.icons8.com/color/48/globe-earth.png" alt="globe" class="logo-icon"> World Trivia</h1>
       <p class="subtitle">Test your knowledge about the world!</p>
 
-      <div class="setup-card">
-        <h2>Choose a Category</h2>
-        <div class="category-grid">
-          <button class="category-btn" data-category="flags">
-            <span class="cat-icon">🏳️</span>
-            <span class="cat-label">Flags</span>
-          </button>
-          <button class="category-btn" data-category="countries">
-            <span class="cat-icon">🗺️</span>
-            <span class="cat-label">Countries</span>
-          </button>
-          <button class="category-btn" data-category="languages">
-            <span class="cat-icon">🗣️</span>
-            <span class="cat-label">Languages</span>
-          </button>
-          <button class="category-btn" data-category="currencies">
-            <span class="cat-icon">💰</span>
-            <span class="cat-label">Currencies</span>
-          </button>
-          <button class="category-btn mixed-btn" data-category="mixed">
-            <span class="cat-icon">🎲</span>
-            <span class="cat-label">Mixed</span>
-          </button>
-        </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="quiz-setup">🎯 Quiz</button>
+        <button class="nav-tab" data-tab="learn-setup">📚 Learn</button>
+        <button class="nav-tab" data-tab="stats-setup">📊 Stats</button>
+      </div>
 
-        <h2>Number of Questions</h2>
-        <div class="count-grid">
-          <button class="count-btn" data-count="10">10</button>
-          <button class="count-btn" data-count="20">20</button>
-          <button class="count-btn" data-count="30">30</button>
-          <button class="count-btn" data-count="50">50</button>
-        </div>
+      <!-- QUIZ SETUP TAB -->
+      <div id="quiz-setup" class="tab-content active">
+        <div class="setup-card">
+          <h2>Choose a Category</h2>
+          <div class="category-grid">
+            <button class="category-btn" data-category="flags">
+              <span class="cat-icon">🏳️</span>
+              <span class="cat-label">Flags</span>
+            </button>
+            <button class="category-btn" data-category="countries">
+              <span class="cat-icon">🗺️</span>
+              <span class="cat-label">Countries</span>
+            </button>
+            <button class="category-btn" data-category="languages">
+              <span class="cat-icon">🗣️</span>
+              <span class="cat-label">Languages</span>
+            </button>
+            <button class="category-btn" data-category="currencies">
+              <span class="cat-icon">💰</span>
+              <span class="cat-label">Currencies</span>
+            </button>
+            <button class="category-btn mixed-btn" data-category="mixed">
+              <span class="cat-icon">🎲</span>
+              <span class="cat-label">Mixed</span>
+            </button>
+          </div>
 
-        <h2>Timer Mode</h2>
-        <div class="mode-grid">
-          <button class="mode-btn selected" data-mode="timed">⏱️ Timed</button>
-          <button class="mode-btn" data-mode="untimed">♾️ Untimed</button>
-        </div>
+          <h2>Number of Questions</h2>
+          <div class="count-grid">
+            <button class="count-btn" data-count="10">10</button>
+            <button class="count-btn" data-count="20">20</button>
+            <button class="count-btn" data-count="30">30</button>
+            <button class="count-btn" data-count="50">50</button>
+          </div>
 
-        <button id="start-btn" class="primary-btn" disabled>Start Quiz</button>
+          <h2>Timer Mode</h2>
+          <div class="mode-grid">
+            <button class="mode-btn selected" data-mode="timed">⏱️ Timed</button>
+            <button class="mode-btn" data-mode="untimed">♾️ Untimed</button>
+          </div>
+
+          <button id="start-btn" class="primary-btn" disabled>Start Quiz</button>
+        </div>
+      </div>
+
+      <!-- LEARN / FLASHCARD TAB -->
+      <div id="learn-setup" class="tab-content">
+        <div class="setup-card">
+          <h2>Browse Flashcards</h2>
+          <p class="setup-desc">Tap a card to flip and reveal details. No scoring — just learn!</p>
+
+          <h2>Filter by Region</h2>
+          <div class="region-grid">
+            <button class="region-btn selected" data-region="all">🌍 All</button>
+            <button class="region-btn" data-region="Africa">Africa</button>
+            <button class="region-btn" data-region="Asia">Asia</button>
+            <button class="region-btn" data-region="Europe">Europe</button>
+            <button class="region-btn" data-region="North America">N. America</button>
+            <button class="region-btn" data-region="South America">S. America</button>
+            <button class="region-btn" data-region="Oceania">Oceania</button>
+          </div>
+
+          <h2>Sort By</h2>
+          <div class="mode-grid">
+            <button class="sort-btn selected" data-sort="alpha">A → Z</button>
+            <button class="sort-btn" data-sort="random">🔀 Random</button>
+            <button class="sort-btn" data-sort="weakest">💪 Weakest</button>
+          </div>
+
+          <button id="learn-btn" class="primary-btn">Start Learning</button>
+        </div>
+      </div>
+
+      <!-- STATS TAB -->
+      <div id="stats-setup" class="tab-content">
+        <div class="setup-card">
+          <h2>Your Statistics</h2>
+
+          <div class="stats-overview">
+            <div class="stat-card">
+              <span class="stat-card-value" id="total-games">0</span>
+              <span class="stat-card-label">Games Played</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card-value" id="total-correct">0</span>
+              <span class="stat-card-label">Total Correct</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card-value" id="overall-accuracy">0%</span>
+              <span class="stat-card-label">Accuracy</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card-value" id="all-time-streak">0</span>
+              <span class="stat-card-label">Best Streak</span>
+            </div>
+          </div>
+
+          <h2>Category Breakdown</h2>
+          <div id="category-stats" class="category-stats"></div>
+
+          <h2>Continent Knowledge</h2>
+          <div id="continent-stats" class="continent-stats"></div>
+
+          <h2>Recent Games</h2>
+          <div id="history-list" class="history-list"></div>
+
+          <button id="clear-stats-btn" class="danger-btn">🗑️ Clear All Data</button>
+        </div>
       </div>
     </div>
   </div>
@@ -137,9 +211,47 @@
         </div>
 
         <div class="result-actions">
+          <button id="retry-wrong-btn" class="primary-btn hidden">🔄 Retry Wrong Answers</button>
           <button id="retry-btn" class="primary-btn">Play Again</button>
           <button id="home-btn" class="secondary-btn">Home</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== LEARN / FLASHCARD SCREEN ==================== -->
+  <div id="learn-screen" class="screen">
+    <div class="container">
+      <div class="learn-header">
+        <button id="learn-back-btn" class="back-btn">← Back</button>
+        <span id="learn-counter" class="learn-counter">1 / 195</span>
+      </div>
+
+      <div id="flashcard" class="flashcard">
+        <div class="flashcard-inner">
+          <div class="flashcard-front">
+            <img id="fc-flag" src="" alt="flag" class="fc-flag" />
+            <h2 id="fc-country" class="fc-country"></h2>
+            <p class="fc-hint">Tap to reveal details</p>
+          </div>
+          <div class="flashcard-back">
+            <img id="fc-flag-back" src="" alt="flag" class="fc-flag-back" />
+            <h2 id="fc-country-back" class="fc-country-back"></h2>
+            <div class="fc-details">
+              <div class="fc-row"><span class="fc-label">🏛️ Capital</span><span id="fc-capital" class="fc-value"></span></div>
+              <div class="fc-row"><span class="fc-label">🌍 Continent</span><span id="fc-continent" class="fc-value"></span></div>
+              <div class="fc-row"><span class="fc-label">🗣️ Language</span><span id="fc-language" class="fc-value"></span></div>
+              <div class="fc-row"><span class="fc-label">💰 Currency</span><span id="fc-currency" class="fc-value"></span></div>
+            </div>
+            <p class="fc-hint">Tap to flip back</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-nav">
+        <button id="fc-prev" class="learn-nav-btn">◀ Prev</button>
+        <button id="fc-know" class="learn-know-btn">✅ I know this</button>
+        <button id="fc-next" class="learn-nav-btn">Next ▶</button>
       </div>
     </div>
   </div>
