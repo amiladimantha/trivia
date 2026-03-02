@@ -27,6 +27,7 @@
 
   const $retryBtn  = document.getElementById("retry-btn");
   const $homeBtn   = document.getElementById("home-btn");
+  const $exitBtn   = document.getElementById("exit-btn");
 
   /* ---------- Quiz state ---------- */
   let selectedCategory = null;
@@ -191,9 +192,22 @@
     }
   }
 
+  /* ----- Helper: check if answer is revealed in the question text ----- */
+  function nameRevealed(country, value) {
+    const c = country.toLowerCase();
+    const v = value.toLowerCase();
+    // check if any significant word of the country name appears in the value
+    const words = c.split(/[\s-]+/).filter(w => w.length > 3);
+    return words.some(w => v.includes(w));
+  }
+
   /* ----- Language questions ----- */
   function buildLanguageQuestion(item, pool) {
-    if (Math.random() < 0.5) {
+    // avoid reverse question if language name reveals the country
+    const canReverse = !nameRevealed(item.country, item.language);
+    const doReverse = canReverse && Math.random() < 0.5;
+
+    if (!doReverse) {
       const wrongs = pickRandom(pool.map(p => p.language), 3, item.language);
       const opts = shuffle([item.language, ...wrongs]);
       return {
@@ -216,7 +230,11 @@
 
   /* ----- Currency questions ----- */
   function buildCurrencyQuestion(item, pool) {
-    if (Math.random() < 0.5) {
+    // avoid reverse question if currency name reveals the country
+    const canReverse = !nameRevealed(item.country, item.currency);
+    const doReverse = canReverse && Math.random() < 0.5;
+
+    if (!doReverse) {
       const wrongs = pickRandom(pool.map(p => p.currency), 3, item.currency);
       const opts = shuffle([item.currency, ...wrongs]);
       return {
@@ -449,15 +467,22 @@
     renderQuestion();
   });
 
-  $homeBtn.addEventListener("click", () => {
+  function goHome() {
     clearInterval(timer);
-    // reset selections
     $catBtns.forEach(b => b.classList.remove("selected"));
     $countBtns.forEach(b => b.classList.remove("selected"));
     selectedCategory = null;
     selectedCount = null;
     $startBtn.disabled = true;
     showScreen($start);
+  }
+
+  $homeBtn.addEventListener("click", goHome);
+
+  $exitBtn.addEventListener("click", () => {
+    if (confirm("Are you sure you want to exit? Your progress will be lost.")) {
+      goHome();
+    }
   });
 
 })();

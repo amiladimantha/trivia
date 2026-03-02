@@ -132,6 +132,24 @@ body{
   display:flex;justify-content:space-between;align-items:center;
   margin-bottom:8px;
 }
+.quiz-header-right{
+  display:flex;align-items:center;gap:10px;
+}
+.exit-btn{
+  width:32px;height:32px;
+  border:2px solid var(--wrong);
+  border-radius:50%;
+  background:transparent;
+  color:var(--wrong);
+  font-size:1rem;font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.exit-btn:hover{
+  background:var(--wrong);
+  color:#fff;
+}
 #question-counter{font-weight:700;font-size:1rem}
 .badge{
   background:var(--primary);
