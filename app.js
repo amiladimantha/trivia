@@ -121,11 +121,11 @@
   }
 
   /* ----- Helper: build flag <img> tag ----- */
-  function flagImg(code, size = 160) {
-    return `<img src="https://flagcdn.com/w${size}/${code}.png" alt="flag" class="flag-img" />`;
+  function flagImg(code) {
+    return `<img src="https://flagcdn.com/w320/${code}.png" alt="flag" class="flag-img" />`;
   }
   function flagImgSmall(code) {
-    return `<img src="https://flagcdn.com/w80/${code}.png" alt="flag" class="flag-img-small" />`;
+    return `<img src="https://flagcdn.com/w160/${code}.png" alt="flag" class="flag-img-small" />`;
   }
 
   /* ----- Flag questions ----- */
@@ -252,7 +252,7 @@
     // question
     $qText.textContent = q.text;
     if (q.visualType === "flag" && q.visual) {
-      $qVisual.innerHTML = flagImg(q.visual, 240);
+      $qVisual.innerHTML = flagImg(q.visual);
     } else {
       $qVisual.innerHTML = "";
     }
@@ -422,7 +422,7 @@
       div.innerHTML = `
         <span class="review-icon">${a.isCorrect ? "✅" : "❌"}</span>
         <div class="review-detail">
-          <div class="review-q">${i + 1}. ${a.visualType === "flag" && a.visual ? `<img src="https://flagcdn.com/w40/${a.visual}.png" class="review-flag" /> ` : ""}${a.question}</div>
+          <div class="review-q">${i + 1}. ${a.visualType === "flag" && a.visual ? `<img src="https://flagcdn.com/w80/${a.visual}.png" class="review-flag" /> ` : ""}${a.question}</div>
           <div class="review-a">
             ${a.isCorrect
               ? `<span class="correct-text">${a.correct}</span>`
