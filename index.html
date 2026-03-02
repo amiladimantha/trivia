@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Trivia Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ==================== START SCREEN ==================== -->
+  <div id="start-screen" class="screen active">
+    <div class="container">
+      <h1 class="logo">🌍 World Trivia</h1>
+      <p class="subtitle">Test your knowledge about the world!</p>
+
+      <div class="setup-card">
+        <h2>Choose a Category</h2>
+        <div class="category-grid">
+          <button class="category-btn" data-category="flags">
+            <span class="cat-icon">🏳️</span>
+            <span class="cat-label">Flags</span>
+          </button>
+          <button class="category-btn" data-category="countries">
+            <span class="cat-icon">🗺️</span>
+            <span class="cat-label">Countries</span>
+          </button>
+          <button class="category-btn" data-category="languages">
+            <span class="cat-icon">🗣️</span>
+            <span class="cat-label">Languages</span>
+          </button>
+          <button class="category-btn" data-category="currencies">
+            <span class="cat-icon">💰</span>
+            <span class="cat-label">Currencies</span>
+          </button>
+        </div>
+
+        <h2>Number of Questions</h2>
+        <div class="count-grid">
+          <button class="count-btn" data-count="10">10</button>
+          <button class="count-btn" data-count="20">20</button>
+          <button class="count-btn" data-count="30">30</button>
+          <button class="count-btn" data-count="50">50</button>
+        </div>
+
+        <button id="start-btn" class="primary-btn" disabled>Start Quiz</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== QUIZ SCREEN ==================== -->
+  <div id="quiz-screen" class="screen">
+    <div class="container">
+      <div class="quiz-header">
+        <div class="progress-info">
+          <span id="question-counter">1 / 10</span>
+          <span id="category-label" class="badge">Flags</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div class="score-timer">
+          <span id="score-display">Score: 0</span>
+          <span id="timer-display">⏱ 15s</span>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <p id="question-text" class="question-text"></p>
+        <div id="question-visual" class="question-visual"></div>
+        <div id="options-container" class="options-container"></div>
+      </div>
+
+      <div id="feedback" class="feedback hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== RESULT SCREEN ==================== -->
+  <div id="result-screen" class="screen">
+    <div class="container">
+      <div class="result-card">
+        <h1 id="result-emoji" class="result-emoji"></h1>
+        <h2 id="result-title" class="result-title"></h2>
+        <p id="result-score" class="result-score"></p>
+        <div id="result-bar-wrap" class="result-bar-wrap">
+          <div id="result-bar" class="result-bar"></div>
+        </div>
+        <p id="result-message" class="result-message"></p>
+
+        <div class="result-stats">
+          <div class="stat">
+            <span class="stat-value" id="stat-correct">0</span>
+            <span class="stat-label">Correct</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-wrong">0</span>
+            <span class="stat-label">Wrong</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-time">0s</span>
+            <span class="stat-label">Avg Time</span>
+          </div>
+        </div>
+
+        <div id="review-section" class="review-section">
+          <h3>Review Answers</h3>
+          <div id="review-list" class="review-list"></div>
+        </div>
+
+        <div class="result-actions">
+          <button id="retry-btn" class="primary-btn">Play Again</button>
+          <button id="home-btn" class="secondary-btn">Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
