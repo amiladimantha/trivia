@@ -89,6 +89,14 @@
   // Stats
   const $clearStats  = document.getElementById("clear-stats-btn");
 
+  // New question type elements
+  const $mapContainer     = document.getElementById("map-container");
+  const $worldMap         = document.getElementById("world-map");
+  const $mapTooltip       = document.getElementById("map-tooltip");
+  const $multiselectContainer = document.getElementById("multiselect-container");
+  const $multiselectOptions   = document.getElementById("multiselect-options");
+  const $multiselectSubmit    = document.getElementById("multiselect-submit");
+
   /* =================================================================
      STATE
      ================================================================= */
@@ -111,8 +119,15 @@
   let learnCards       = [];
   let learnIndex       = 0;
 
-  const LETTERS = ["A", "B", "C", "D"];
+  // Multi-select state
+  let multiSelectAnswers = [];
+  let currentMultiSelectCorrect = [];
+
+  const LETTERS = ["A", "B", "C", "D", "E", "F"];
   const TIME_PER_QUESTION = 15;
+
+  // All categories including new ones
+  const ALL_CATEGORIES = ["flags", "countries", "languages", "currencies", "geography", "neighbors", "comparison", "landmarks", "foods"];
 
   /* =================================================================
      TABS ON START SCREEN
@@ -259,31 +274,45 @@
       if (uniqueCountries.length === 0) return;
 
       const cats = selectedCategory === "mixed"
-        ? ["flags", "countries", "languages", "currencies"]
+        ? ALL_CATEGORIES
         : [selectedCategory];
 
       questions = [];
       uniqueCountries.forEach(country => {
         const cat = cats[Math.floor(Math.random() * cats.length)];
-        const pool = TRIVIA_DATA[cat];
-        const item = pool.find(p => p.country === country);
-        if (item) questions.push(generateQuestion(item, pool, cat));
+        const q = generateQuestionForCategory(country, cat);
+        if (q) questions.push(q);
       });
       questions = shuffle(questions);
       selectedCount = questions.length;
     } else if (selectedCategory === "mixed") {
-      const categories = ["flags", "countries", "languages", "currencies"];
       questions = [];
       const allItems = [];
-      categories.forEach(cat => {
-        TRIVIA_DATA[cat].forEach(item => allItems.push({ item, cat }));
+      // Add items from all categories
+      TRIVIA_DATA.countries.forEach(item => {
+        ALL_CATEGORIES.forEach(cat => {
+          allItems.push({ item, cat });
+        });
       });
       // Weighted: countries you get wrong more appear more often
       const sorted = weightedShuffle(allItems, e => getCountryWeight(e.item.country));
       let idx = 0;
       while (questions.length < selectedCount) {
         const { item, cat } = sorted[idx % sorted.length];
-        questions.push(generateQuestion(item, TRIVIA_DATA[cat], cat));
+        const q = generateQuestionForCategory(item.country, cat);
+        if (q) questions.push(q);
+        idx++;
+      }
+    } else if (["geography", "neighbors", "comparison", "landmarks", "foods"].includes(selectedCategory)) {
+      // New category types
+      questions = [];
+      const pool = EXTENDED_DATA.countryInfo;
+      const sorted = weightedShuffle(pool, item => getCountryWeight(item.country));
+      let idx = 0;
+      while (questions.length < selectedCount) {
+        const item = sorted[idx % sorted.length];
+        const q = generateQuestionForCategory(item.country, selectedCategory);
+        if (q) questions.push(q);
         idx++;
       }
     } else {
@@ -303,6 +332,62 @@
     currentStreak = 0;
     bestStreak = 0;
     answers = [];
+  }
+
+  function generateQuestionForCategory(country, cat) {
+    // Helper to generate question for a specific country and category
+    switch (cat) {
+      case "flags": {
+        const item = TRIVIA_DATA.flags.find(f => f.country === country);
+        if (item) return generateQuestion(item, TRIVIA_DATA.flags, cat);
+        break;
+      }
+      case "countries": {
+        const item = TRIVIA_DATA.countries.find(c => c.country === country);
+        if (item) return generateQuestion(item, TRIVIA_DATA.countries, cat);
+        break;
+      }
+      case "languages": {
+        const item = TRIVIA_DATA.languages.find(l => l.country === country);
+        if (item) return generateQuestion(item, TRIVIA_DATA.languages, cat);
+        break;
+      }
+      case "currencies": {
+        const item = TRIVIA_DATA.currencies.find(c => c.country === country);
+        if (item) return generateQuestion(item, TRIVIA_DATA.currencies, cat);
+        break;
+      }
+      case "geography": {
+        const item = EXTENDED_DATA.countryInfo.find(c => c.country === country);
+        if (item) return buildGeographyQuestion(item);
+        break;
+      }
+      case "neighbors": {
+        const item = EXTENDED_DATA.countryInfo.find(c => c.country === country);
+        if (item && item.neighbors && item.neighbors.length > 0) return buildNeighborQuestion(item);
+        break;
+      }
+      case "comparison": {
+        return buildComparisonQuestion();
+      }
+      case "landmarks": {
+        const items = EXTENDED_DATA.landmarks.filter(l => l.country === country);
+        if (items.length > 0) return buildLandmarkQuestion(items[Math.floor(Math.random() * items.length)]);
+        // If no landmark for this country, pick random
+        const randomLandmark = EXTENDED_DATA.landmarks[Math.floor(Math.random() * EXTENDED_DATA.landmarks.length)];
+        return buildLandmarkQuestion(randomLandmark);
+      }
+      case "foods": {
+        const items = EXTENDED_DATA.foods.filter(f => f.country === country);
+        if (items.length > 0) return buildFoodQuestion(items[Math.floor(Math.random() * items.length)]);
+        // If no food for this country, pick random
+        const randomFood = EXTENDED_DATA.foods[Math.floor(Math.random() * EXTENDED_DATA.foods.length)];
+        return buildFoodQuestion(randomFood);
+      }
+    }
+    // Fallback to a random basic category
+    const fallbackCat = ["flags", "countries", "languages", "currencies"][Math.floor(Math.random() * 4)];
+    return generateQuestionForCategory(country, fallbackCat);
   }
 
   function generateQuestion(item, pool, cat) {
@@ -432,6 +517,199 @@
     }
   }
 
+  /* ----- Geography/Map questions ----- */
+  function buildGeographyQuestion(item) {
+    const pool = EXTENDED_DATA.countryInfo;
+    const countryData = TRIVIA_DATA.countries.find(c => c.country === item.country);
+    const continent = countryData ? countryData.continent : "Unknown";
+    
+    // Different types of geography questions
+    const types = ["locate", "identify"];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    if (type === "locate") {
+      const wrongs = pickRandom(pool.map(p => p.country), 3, item.country);
+      const opts = shuffle([item.country, ...wrongs]);
+      return {
+        text: `Which country is highlighted on the map?`,
+        visual: item.country,
+        visualType: "map-highlight",
+        options: opts,
+        answer: item.country,
+        explanation: `${item.country} is located in ${continent}. Population: ${formatNumber(item.population)} million.`,
+        sourceCountry: item.country,
+        sourceCategory: "geography"
+      };
+    } else {
+      // Click-based question - find where the country is
+      const wrongs = pickRandom(pool.map(p => p.country), 3, item.country);
+      const opts = shuffle([item.country, ...wrongs]);
+      return {
+        text: `Where is ${item.country} located?`,
+        visual: "",
+        visualType: "map-click",
+        options: opts,
+        answer: item.country,
+        explanation: `${item.country} is located in ${continent}.`,
+        sourceCountry: item.country,
+        sourceCategory: "geography"
+      };
+    }
+  }
+
+  /* ----- Neighbor questions ----- */
+  function buildNeighborQuestion(item) {
+    const pool = EXTENDED_DATA.countryInfo.filter(c => c.neighbors && c.neighbors.length > 0);
+    const r = Math.random();
+    
+    if (r < 0.5 && item.neighbors.length > 0) {
+      // Which country borders X?
+      const correctNeighbor = item.neighbors[Math.floor(Math.random() * item.neighbors.length)];
+      const nonNeighbors = pool
+        .filter(c => c.country !== item.country && !item.neighbors.includes(c.country))
+        .map(c => c.country);
+      const wrongs = pickRandom(nonNeighbors, 3, correctNeighbor);
+      const opts = shuffle([correctNeighbor, ...wrongs]);
+      
+      return {
+        text: `Which country borders ${item.country}?`,
+        visual: "",
+        visualType: "",
+        options: opts,
+        answer: correctNeighbor,
+        explanation: `${item.country} borders: ${item.neighbors.join(", ")}.`,
+        sourceCountry: item.country,
+        sourceCategory: "neighbors"
+      };
+    } else {
+      // X borders all these countries. Which one is it?
+      const countriesWithSimilarNeighbors = pool.filter(c => 
+        c.country !== item.country && c.neighbors && c.neighbors.length >= 2
+      );
+      const wrongs = pickRandom(countriesWithSimilarNeighbors.map(c => c.country), 3, item.country);
+      const opts = shuffle([item.country, ...wrongs]);
+      
+      const displayNeighbors = item.neighbors.slice(0, 3).join(", ");
+      return {
+        text: `Which country borders ${displayNeighbors}?`,
+        visual: "",
+        visualType: "",
+        options: opts,
+        answer: item.country,
+        explanation: `${item.country} shares borders with ${item.neighbors.join(", ")}.`,
+        sourceCountry: item.country,
+        sourceCategory: "neighbors"
+      };
+    }
+  }
+
+  /* ----- Comparison questions (Population/Area) ----- */
+  function buildComparisonQuestion() {
+    const pool = EXTENDED_DATA.countryInfo.filter(c => c.population && c.area);
+    const shuffled = shuffle(pool);
+    const [country1, country2] = shuffled.slice(0, 2);
+    
+    const type = Math.random() < 0.5 ? "population" : "area";
+    const flag1 = TRIVIA_DATA.flags.find(f => f.country === country1.country);
+    const flag2 = TRIVIA_DATA.flags.find(f => f.country === country2.country);
+    
+    let answer, text, explanation;
+    if (type === "population") {
+      answer = country1.population > country2.population ? country1.country : country2.country;
+      text = "Which country has a LARGER population?";
+      explanation = `${country1.country}: ${formatNumber(country1.population)}M vs ${country2.country}: ${formatNumber(country2.population)}M`;
+    } else {
+      answer = country1.area > country2.area ? country1.country : country2.country;
+      text = "Which country is LARGER in area?";
+      explanation = `${country1.country}: ${formatNumber(country1.area)} km² vs ${country2.country}: ${formatNumber(country2.area)} km²`;
+    }
+    
+    return {
+      text,
+      visual: "",
+      visualType: "comparison",
+      options: [country1.country, country2.country],
+      answer,
+      explanation,
+      comparisonData: {
+        country1: { name: country1.country, flag: flag1?.code || "", population: country1.population, area: country1.area },
+        country2: { name: country2.country, flag: flag2?.code || "", population: country2.population, area: country2.area },
+        type
+      },
+      sourceCountry: answer,
+      sourceCategory: "comparison"
+    };
+  }
+
+  /* ----- Landmark questions ----- */
+  function buildLandmarkQuestion(item) {
+    const pool = EXTENDED_DATA.landmarks;
+    const allCountries = [...new Set(pool.map(l => l.country))];
+    const wrongs = pickRandom(allCountries, 3, item.country);
+    const opts = shuffle([item.country, ...wrongs]);
+    
+    return {
+      text: `In which country is this famous landmark located?`,
+      visual: item.image,
+      visualType: "image",
+      options: opts,
+      answer: item.country,
+      explanation: `${item.name} is located in ${item.country}.`,
+      landmarkName: item.name,
+      sourceCountry: item.country,
+      sourceCategory: "landmarks"
+    };
+  }
+
+  /* ----- Food questions ----- */
+  function buildFoodQuestion(item) {
+    const pool = EXTENDED_DATA.foods;
+    const allCountries = [...new Set(pool.map(f => f.country))];
+    const wrongs = pickRandom(allCountries, 3, item.country);
+    const opts = shuffle([item.country, ...wrongs]);
+    
+    return {
+      text: `"${item.name}" is a traditional dish from which country?`,
+      visual: item.image,
+      visualType: "image",
+      options: opts,
+      answer: item.country,
+      explanation: `${item.name} is a famous dish from ${item.country}.`,
+      foodName: item.name,
+      sourceCountry: item.country,
+      sourceCategory: "foods"
+    };
+  }
+
+  /* ----- Multi-select question builder (for Euro countries, etc) ----- */
+  function buildMultiSelectQuestion() {
+    const euroCountries = EXTENDED_DATA.euroCountries;
+    const allCountries = TRIVIA_DATA.countries.map(c => c.country);
+    
+    // Pick some correct answers (3-4) and some wrong ones
+    const correctOnes = shuffle(euroCountries.filter(c => allCountries.includes(c))).slice(0, 4);
+    const wrongOnes = shuffle(allCountries.filter(c => !euroCountries.includes(c))).slice(0, 4);
+    const options = shuffle([...correctOnes, ...wrongOnes]);
+    
+    return {
+      text: "Select ALL countries that use the Euro (€) as their currency:",
+      visual: "",
+      visualType: "multiselect",
+      options,
+      answer: correctOnes,
+      explanation: `Euro zone countries include: ${correctOnes.join(", ")}`,
+      sourceCountry: correctOnes[0],
+      sourceCategory: "currencies"
+    };
+  }
+
+  /* Helper: Format number with commas */
+  function formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toLocaleString();
+  }
+
   /* =================================================================
      RENDER QUESTION
      ================================================================= */
@@ -444,21 +722,101 @@
     $scoreDisp.textContent = `Score: ${score}`;
 
     $qText.textContent = q.text;
-    $qVisual.innerHTML = (q.visualType === "flag" && q.visual) ? flagImg(q.visual) : "";
-
+    
+    // Reset all visual containers
+    $qVisual.innerHTML = "";
+    $qVisual.style.display = "none";
+    $mapContainer.classList.add("hidden");
     $options.innerHTML = "";
-    q.options.forEach((opt, i) => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      if (q.visualType === "flag-options") {
-        btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${flagImgSmall(opt)}`;
-        btn.dataset.code = opt;
-      } else {
-        btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${opt}`;
-      }
-      btn.addEventListener("click", () => handleAnswer(btn, opt, q));
-      $options.appendChild(btn);
-    });
+    $options.style.display = "flex";
+    $multiselectContainer.classList.add("hidden");
+    multiSelectAnswers = [];
+    
+    // Handle different visual types
+    if (q.visualType === "flag" && q.visual) {
+      $qVisual.innerHTML = flagImg(q.visual);
+      $qVisual.style.display = "block";
+    } else if (q.visualType === "image" && q.visual) {
+      $qVisual.innerHTML = `<img src="${q.visual}" alt="visual" class="image-visual" onerror="this.src='https://via.placeholder.com/400x250?text=Image+Not+Found'" />`;
+      $qVisual.style.display = "block";
+    } else if (q.visualType === "comparison" && q.comparisonData) {
+      // Render comparison cards
+      const cd = q.comparisonData;
+      $qVisual.innerHTML = `
+        <div class="comparison-container">
+          <div class="comparison-card" data-country="${cd.country1.name}">
+            ${cd.country1.flag ? `<img src="https://flagcdn.com/w160/${cd.country1.flag}.png" alt="flag" class="comparison-flag" />` : ""}
+            <div class="comparison-country">${cd.country1.name}</div>
+          </div>
+          <div class="comparison-vs">VS</div>
+          <div class="comparison-card" data-country="${cd.country2.name}">
+            ${cd.country2.flag ? `<img src="https://flagcdn.com/w160/${cd.country2.flag}.png" alt="flag" class="comparison-flag" />` : ""}
+            <div class="comparison-country">${cd.country2.name}</div>
+          </div>
+        </div>
+      `;
+      $qVisual.style.display = "block";
+      
+      // Add click handlers to comparison cards
+      const cards = $qVisual.querySelectorAll(".comparison-card");
+      cards.forEach(card => {
+        card.addEventListener("click", () => {
+          clearInterval(timer);
+          const chosen = card.dataset.country;
+          const isCorrect = chosen === q.answer;
+          
+          // Highlight cards
+          cards.forEach(c => {
+            c.style.pointerEvents = "none";
+            if (c.dataset.country === q.answer) c.classList.add("correct");
+            if (c === card && !isCorrect) c.classList.add("wrong");
+          });
+          
+          handleComparisonAnswer(chosen, q);
+        });
+      });
+      
+      // Hide regular options for comparison
+      $options.style.display = "none";
+    } else if (q.visualType === "multiselect") {
+      // Render multi-select options
+      $options.style.display = "none";
+      $multiselectContainer.classList.remove("hidden");
+      
+      currentMultiSelectCorrect = q.answer;
+      $multiselectOptions.innerHTML = "";
+      
+      q.options.forEach(opt => {
+        const div = document.createElement("div");
+        div.className = "multiselect-option";
+        div.innerHTML = `<span class="checkbox"></span><span>${opt}</span>`;
+        div.dataset.value = opt;
+        div.addEventListener("click", () => toggleMultiSelect(div, opt));
+        $multiselectOptions.appendChild(div);
+      });
+      
+      $multiselectSubmit.disabled = true;
+    } else if (q.visualType === "map-highlight" && q.visual) {
+      // Show map with highlighted country
+      $mapContainer.classList.remove("hidden");
+      renderWorldMap(q.visual);
+    }
+    
+    // Render regular options (for non-comparison, non-multiselect questions)
+    if (q.visualType !== "comparison" && q.visualType !== "multiselect") {
+      q.options.forEach((opt, i) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        if (q.visualType === "flag-options") {
+          btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${flagImgSmall(opt)}`;
+          btn.dataset.code = opt;
+        } else {
+          btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${opt}`;
+        }
+        btn.addEventListener("click", () => handleAnswer(btn, opt, q));
+        $options.appendChild(btn);
+      });
+    }
 
     $feedback.classList.add("hidden");
     $feedback.className = "feedback hidden";
@@ -484,6 +842,135 @@
     questionStartTime = Date.now();
   }
 
+  /* Multi-select handlers */
+  function toggleMultiSelect(div, value) {
+    div.classList.toggle("selected");
+    if (div.classList.contains("selected")) {
+      div.querySelector(".checkbox").textContent = "✓";
+      multiSelectAnswers.push(value);
+    } else {
+      div.querySelector(".checkbox").textContent = "";
+      multiSelectAnswers = multiSelectAnswers.filter(a => a !== value);
+    }
+    $multiselectSubmit.disabled = multiSelectAnswers.length === 0;
+  }
+
+  function handleMultiSelectSubmit() {
+    clearInterval(timer);
+    const q = questions[currentIndex];
+    const timeTaken = ((Date.now() - questionStartTime) / 1000).toFixed(1);
+    
+    const correctSet = new Set(currentMultiSelectCorrect);
+    const selectedSet = new Set(multiSelectAnswers);
+    
+    // Check if selections match
+    let allCorrect = true;
+    let partialCorrect = 0;
+    
+    currentMultiSelectCorrect.forEach(c => {
+      if (selectedSet.has(c)) partialCorrect++;
+      else allCorrect = false;
+    });
+    
+    // Check for wrong selections
+    multiSelectAnswers.forEach(s => {
+      if (!correctSet.has(s)) allCorrect = false;
+    });
+    
+    const isCorrect = allCorrect && multiSelectAnswers.length === currentMultiSelectCorrect.length;
+    
+    // Highlight options
+    const options = $multiselectOptions.querySelectorAll(".multiselect-option");
+    options.forEach(opt => {
+      opt.style.pointerEvents = "none";
+      const val = opt.dataset.value;
+      if (correctSet.has(val) && selectedSet.has(val)) opt.classList.add("correct-answer");
+      else if (!correctSet.has(val) && selectedSet.has(val)) opt.classList.add("wrong-answer");
+      else if (correctSet.has(val) && !selectedSet.has(val)) opt.classList.add("missed-answer");
+    });
+    
+    $multiselectSubmit.disabled = true;
+    
+    if (isCorrect) {
+      score++;
+      currentStreak++;
+      if (currentStreak > bestStreak) bestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+    
+    if (q.sourceCountry) recordCountry(q.sourceCountry, isCorrect);
+    
+    showFeedback(isCorrect, currentMultiSelectCorrect.join(", "), q.explanation);
+    
+    answers.push({
+      question: q.text, visual: q.visual || "", visualType: q.visualType || "",
+      correct: currentMultiSelectCorrect.join(", "), chosen: multiSelectAnswers.join(", "), 
+      isCorrect, timeTaken: parseFloat(timeTaken), sourceCountry: q.sourceCountry || "",
+    });
+    
+    setTimeout(nextQuestion, 1500);
+  }
+
+  /* Comparison answer handler */
+  function handleComparisonAnswer(chosen, q) {
+    const timeTaken = ((Date.now() - questionStartTime) / 1000).toFixed(1);
+    const isCorrect = chosen === q.answer;
+    
+    if (isCorrect) {
+      score++;
+      currentStreak++;
+      if (currentStreak > bestStreak) bestStreak = currentStreak;
+    } else {
+      currentStreak = 0;
+    }
+    
+    if (q.sourceCountry) recordCountry(q.sourceCountry, isCorrect);
+    
+    showFeedback(isCorrect, q.answer, q.explanation);
+    
+    answers.push({
+      question: q.text, visual: q.visual || "", visualType: q.visualType || "",
+      correct: q.answer, chosen, isCorrect, timeTaken: parseFloat(timeTaken), 
+      sourceCountry: q.sourceCountry || "",
+    });
+    
+    setTimeout(nextQuestion, 1200);
+  }
+
+  /* World Map Rendering (simplified SVG map) */
+  function renderWorldMap(highlightCountry) {
+    // Simple world map with major countries as regions
+    // Using simplified path data for major countries
+    const mapHTML = `
+      <rect x="0" y="0" width="1000" height="500" fill="#1a2a4a" />
+      <text x="500" y="250" fill="rgba(255,255,255,0.3)" text-anchor="middle" font-size="16">
+        🌍 ${highlightCountry} is highlighted
+      </text>
+      <circle cx="${getMapX(highlightCountry)}" cy="${getMapY(highlightCountry)}" r="15" fill="var(--accent)" stroke="#fff" stroke-width="2" class="map-marker-svg">
+        <animate attributeName="r" values="15;20;15" dur="1s" repeatCount="indefinite"/>
+      </circle>
+    `;
+    $worldMap.innerHTML = mapHTML;
+  }
+
+  function getMapX(country) {
+    const coords = EXTENDED_DATA.mapCoordinates[country];
+    if (!coords) return 500;
+    // Convert longitude (-180 to 180) to SVG x (0 to 1000)
+    return ((coords.lng + 180) / 360) * 1000;
+  }
+
+  function getMapY(country) {
+    const coords = EXTENDED_DATA.mapCoordinates[country];
+    if (!coords) return 250;
+    // Convert latitude (-90 to 90) to SVG y (0 to 500), inverted
+    return ((90 - coords.lat) / 180) * 500;
+  }
+
+  // Multi-select submit event listener
+  $multiselectSubmit.addEventListener("click", handleMultiSelectSubmit);
+
   /* =================================================================
      TIMER
      ================================================================= */
@@ -502,8 +989,28 @@
 
   function handleTimeout() {
     const q = questions[currentIndex];
-    lockOptions(null, q);
-    showFeedback(false, q.answer, q.explanation);
+    
+    // Handle different question types on timeout
+    if (q.visualType === "comparison") {
+      const cards = $qVisual.querySelectorAll(".comparison-card");
+      cards.forEach(c => {
+        c.style.pointerEvents = "none";
+        if (c.dataset.country === q.answer) c.classList.add("correct");
+      });
+    } else if (q.visualType === "multiselect") {
+      const options = $multiselectOptions.querySelectorAll(".multiselect-option");
+      const correctSet = new Set(currentMultiSelectCorrect);
+      options.forEach(opt => {
+        opt.style.pointerEvents = "none";
+        if (correctSet.has(opt.dataset.value)) opt.classList.add("correct-answer");
+      });
+      $multiselectSubmit.disabled = true;
+    } else {
+      lockOptions(null, q);
+    }
+    
+    const answerDisplay = Array.isArray(q.answer) ? q.answer.join(", ") : q.answer;
+    showFeedback(false, answerDisplay, q.explanation);
     currentStreak = 0;
     $streakDisp.classList.add("hidden");
     $streakDisp.classList.remove("big-streak");
@@ -512,7 +1019,7 @@
 
     answers.push({
       question: q.text, visual: q.visual || "", visualType: q.visualType || "",
-      correct: q.answer, chosen: "⏱ Time's up", isCorrect: false,
+      correct: answerDisplay, chosen: "⏱ Time's up", isCorrect: false,
       timeTaken: TIME_PER_QUESTION, sourceCountry: q.sourceCountry || "",
     });
     setTimeout(nextQuestion, 1500);
@@ -773,8 +1280,12 @@
     // Category breakdown
     const catDiv = document.getElementById("category-stats");
     catDiv.innerHTML = "";
-    const categories = ["flags", "countries", "languages", "currencies", "mixed"];
-    const catEmojis = { flags: "🏳️", countries: "🗺️", languages: "🗣️", currencies: "💰", mixed: "🎲" };
+    const categories = ["flags", "countries", "languages", "currencies", "geography", "neighbors", "comparison", "landmarks", "foods", "mixed"];
+    const catEmojis = { 
+      flags: "🏳️", countries: "🗺️", languages: "🗣️", currencies: "💰", 
+      geography: "🗺️", neighbors: "🤝", comparison: "⚖️", landmarks: "🏛️", foods: "🍜",
+      mixed: "🎲" 
+    };
     categories.forEach(cat => {
       const games = h.filter(g => g.category === cat);
       if (games.length === 0) return;

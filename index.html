@@ -35,7 +35,7 @@
       <div id="quiz-setup" class="tab-content active">
         <div class="setup-card">
           <h2>Choose a Category</h2>
-          <div class="category-grid">
+          <div class="category-grid category-grid-3">
             <button class="category-btn" data-category="flags">
               <span class="cat-icon">🏳️</span>
               <span class="cat-label">Flags</span>
@@ -51,6 +51,26 @@
             <button class="category-btn" data-category="currencies">
               <span class="cat-icon">💰</span>
               <span class="cat-label">Currencies</span>
+            </button>
+            <button class="category-btn" data-category="geography">
+              <span class="cat-icon">🗺️</span>
+              <span class="cat-label">Geography</span>
+            </button>
+            <button class="category-btn" data-category="neighbors">
+              <span class="cat-icon">🤝</span>
+              <span class="cat-label">Neighbors</span>
+            </button>
+            <button class="category-btn" data-category="comparison">
+              <span class="cat-icon">⚖️</span>
+              <span class="cat-label">Size & Pop</span>
+            </button>
+            <button class="category-btn" data-category="landmarks">
+              <span class="cat-icon">🏛️</span>
+              <span class="cat-label">Landmarks</span>
+            </button>
+            <button class="category-btn" data-category="foods">
+              <span class="cat-icon">🍜</span>
+              <span class="cat-label">Foods</span>
             </button>
             <button class="category-btn mixed-btn" data-category="mixed">
               <span class="cat-icon">🎲</span>
@@ -167,7 +187,15 @@
       <div class="question-card">
         <p id="question-text" class="question-text"></p>
         <div id="question-visual" class="question-visual"></div>
+        <div id="map-container" class="map-container hidden">
+          <svg id="world-map" viewBox="0 0 1000 500" class="world-map"></svg>
+          <div id="map-tooltip" class="map-tooltip hidden"></div>
+        </div>
         <div id="options-container" class="options-container"></div>
+        <div id="multiselect-container" class="multiselect-container hidden">
+          <div id="multiselect-options" class="multiselect-options"></div>
+          <button id="multiselect-submit" class="multiselect-submit">Submit Answer</button>
+        </div>
       </div>
 
       <div id="feedback" class="feedback hidden"></div>
@@ -257,6 +285,7 @@
   </div>
 
   <script src="data.js"></script>
+  <script src="extended-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
